@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="w3.css"> 
+    <style>
+        .MARGINITY{
+            margin-left: 50px;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <title>Article Clustering App</title>
+  </head>
+  <body class="W3-gray">
+    <div class="w3-container w3-blue">
+        <h1>Clustering made easy!</h1>
+    </div>
+    
+    <div style="min-height:750px;" class="w3-container">
+        
+        <div id="Page1" class="w3-container">
+                <div class="w3-panel" style="width: 600px;">
+
+                    <label class="MARGINITY w3-text"><b>URL</b></label>
+                    <input class="MARGINITY w3-input w3-border" type="text" id="url" placeholder="jad.shahroodut.ac.ir">
+                        
+                    <label class="MARGINITY w3-text"><b>Threshold</b></label>
+                    <input class="MARGINITY w3-input w3-border" type="number" id="trsh">
+                    
+                    <button class="MARGINITY w3-btn w3-blue" style="margin-top: 12px;" onclick="cluster();">Start</button>
+                </div>
+            </div>
+        <div id="Page2" class="w3-container w3-hide">
+            <center style="margin-top: 100px">
+                <img src="./wait.gif" alt="please wait">
+                <p id="waiting">starting the process</p>
+            </center>
+            </div>
+        <div id="Page3" class="w3-container w3-hide">
+            <h1>Clusters</h1>
+            </div>
+
+    </div>
+    
+    <div class="w3-container w3-blue">
+        <h5><a style="text-decoration:none;" HREF="mailto:mraoofnia@gmail.com">Mohammad Raoofnia</a> 2018-2019</h5>
+    </div> 
+  </body>
+</html>
+
+<script>
+        function httpGet(theUrl)
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
+            xmlHttp.send( null );
+            return xmlHttp.responseText;
+        }
+        function cluster(){
+            var x = document.getElementById('Page1');
+            x.className += ' w3-hide';
+            console.log("hide");
+            var y = document.getElementById('Page2');
+            y.className = y.className.replace(" w3-hide", "");
+            var z = document.getElementById('Page3');
+            var url = document.getElementById('url').value;
+            var p2 = document.getElementById('waiting');
+            p2.innerHTML = "";
+            console.log("before http get")
+            
+            var id = httpGet("http://127.0.0.1:5000/query/"+document.getElementById("url").value + "/"+document.getElementById("trsh").value);
+            console.log("id is:"+id);
+            var status = httpGet("http://127.0.0.1:5000/check_stat/"+id);
+            p2.innerHTML = status;
+            console.log("status is:"+status);
+            var finished = false;
+
+            setInterval(() => {
+                if(!finished){
+                    status= httpGet("http://127.0.0.1:5000/check_stat/"+id);
+                    p2.innerHTML=status;
+                }
+                if(status=="finished" && !finished){
+                    finished = true;
+                    clearInterval();
+                    console.log("finished");
+            p2.innerHTML = "done";
+            var content = httpGet("http://127.0.0.1:5000/result/"+id);
+            var jsonContent = JSON.parse(content);
+            console.log(jsonContent);
+            jsonContent.forEach(cluster => {
+                var pos = jsonContent.indexOf(cluster);
+                var color = "";
+                if(cluster.length > 3){
+                    color = " w3-lime";
+                }
+                z.innerHTML += '<button onclick="myFunction(\'Demo'+(pos+1)+'\')" class="w3-button w3-block w3-left-align'+color+'">cluster '+ (pos+1)+ ': '+ cluster[0]['title'] +'  (' + cluster.length+' articles)</button><div id="Demo'+(pos+1)+'" class="w3-container w3-hide">'+'</div>';
+                var section = document.getElementById('Demo'+(pos+1));
+                cluster.forEach(article => {
+                    section.innerHTML += '<div class="w3-container w3-light-gray"><h1>'+article['title']+'</h1></div><div class="w3-container"><p>'+article['abstract']+'</p></div>';
+                });
+            });
+            y.className += " w3-hide";
+            z.className = z.className.replace(" w3-hide", " ");
+                }
+            }, 2000);
+            
+            
+
+        }
+    </script>
+
+
+    <script>
+    function myFunction(id) {
+      var x = document.getElementById(id);
+      if (x.className.indexOf("w3-show") == -1) {
+        x.className += " w3-show";
+      } else {
+        x.className = x.className.replace(" w3-show", "");
+      }
+    }
+    </script>
